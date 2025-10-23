@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plagiarism Finder & Remover</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #333;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            opacity: 0.8;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            resize: vertical;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: #0056b3;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .result-section.show {
+            display: block;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .result-title {
+            font-size: 1.3rem;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .score-badge {
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .score-low {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .score-medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .score-high {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .chunk-list {
+            margin-top: 20px;
+        }
+
+        .chunk-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            border-left: 4px solid #ddd;
+            border: 1px solid #ddd;
+        }
+
+        .chunk-item.plagiarized {
+            border-left-color: #dc3545;
+        }
+
+        .chunk-item.original {
+            border-left-color: #28a745;
+        }
+
+        .chunk-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .chunk-id {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .chunk-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .status-plagiarized {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-original {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .chunk-content {
+            color: #555;
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        .chunk-meta {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .source-link {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .source-link:hover {
+            text-decoration: underline;
+        }
+
+        .generate-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+        .generate-btn:hover {
+            background: #138496;
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .rewrite-section {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            display: none;
+        }
+
+        .rewrite-section.show {
+            display: block;
+        }
+
+        .rewrite-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .rewrite-title {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .close-rewrite {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .rewrite-suggestions {
+            display: grid;
+            gap: 10px;
+        }
+
+        .suggestion-item {
+            background: white;
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+        }
+
+        .suggestion-item:hover {
+            border-color: #007bff;
+        }
+
+        .suggestion-text {
+            color: #333;
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+
+        .suggestion-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            border-left: 4px solid #28a745;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 15px;
+            border-left: 4px solid #dc3545;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Plagiarism Finder & Remover</h1>
+            <p>Detect and Fix Plagiarized Content</p>
+        </div>
+
+        <div class="main-content">
+            <!-- Plagiarism Check Tab -->
+            <div id="plagiarism" class="tab-content active">
+                <div class="section">
+                    <h2>Plagiarism Detection & Removal</h2>
+                    <p>Enter your text below to find plagiarized content. The system will detect plagiarism and help you rewrite it.</p>
+                    
+                    <form id="plagiarismForm">
+                        <div class="form-group">
+                            <label for="plagiarismText">Text to Check:</label>
+                            <textarea id="plagiarismText" class="form-control" rows="8" placeholder="Paste your text here to check for plagiarism..."></textarea>
+                        </div>
+                        <button type="submit" class="btn" id="checkPlagiarismBtn">
+                            Find Plagiarism
+                        </button>
+                    </form>
+
+                    <div class="loading" id="plagiarismLoading">
+                        <div class="spinner"></div>
+                        <p>Finding plagiarized content...</p>
+                    </div>
+
+                    <div class="result-section" id="plagiarismResults">
+                        <div class="result-header">
+                            <div class="result-title">Plagiarism Found</div>
+                            <div class="score-badge" id="plagiarismScore"></div>
+                        </div>
+                        
+                        <div class="stats-grid" id="plagiarismStats"></div>
+                        
+                        <div class="chunk-list" id="chunkList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching functionality (simplified for single tab)
+        function showTab(tabName) {
+            // Only one tab now, so this is just for compatibility
+            return;
+        }
+
+        // Plagiarism check functionality
+        document.getElementById('plagiarismForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const text = document.getElementById('plagiarismText').value.trim();
+            if (!text) {
+                alert('Please enter some text to check.');
+                return;
+            }
+            
+            const loading = document.getElementById('plagiarismLoading');
+            const results = document.getElementById('plagiarismResults');
+            const btn = document.getElementById('checkPlagiarismBtn');
+            
+            loading.classList.add('show');
+            results.classList.remove('show');
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch('http://localhost:8000/check-plagiarism', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ content: text })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                displayPlagiarismResults(data);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showError('plagiarismResults', 'Failed to check plagiarism. Please make sure the API is running on localhost:8000');
+            } finally {
+                loading.classList.remove('show');
+                btn.disabled = false;
+            }
+        });
+
+        function displayPlagiarismResults(data) {
+            const results = document.getElementById('plagiarismResults');
+            const scoreBadge = document.getElementById('plagiarismScore');
+            const statsGrid = document.getElementById('plagiarismStats');
+            const chunkList = document.getElementById('chunkList');
+            
+            // Update score badge
+            const score = data.overall_plagiarism_score;
+            scoreBadge.textContent = `${score.toFixed(1)}% Plagiarism`;
+            scoreBadge.className = 'score-badge ' + 
+                (score < 20 ? 'score-low' : score < 50 ? 'score-medium' : 'score-high');
+            
+            // Update stats
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${data.total_words}</div>
+                    <div class="stat-label">Total Words</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${data.total_chunks}</div>
+                    <div class="stat-label">Total Chunks</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${data.chunks_with_plagiarism}</div>
+                    <div class="stat-label">Plagiarized Chunks</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${data.processing_time.toFixed(2)}s</div>
+                    <div class="stat-label">Processing Time</div>
+                </div>
+            `;
+            
+            // Update chunk list with rewrite functionality
+            chunkList.innerHTML = '';
+            data.chunk_details.forEach(chunk => {
+                const chunkDiv = document.createElement('div');
+                chunkDiv.className = `chunk-item ${chunk.is_plagiarized ? 'plagiarized' : 'original'}`;
+                
+                chunkDiv.innerHTML = `
+                    <div class="chunk-header">
+                        <div class="chunk-id">Chunk ${chunk.chunk_id + 1}</div>
+                        <div class="chunk-status ${chunk.is_plagiarized ? 'status-plagiarized' : 'status-original'}">
+                            ${chunk.is_plagiarized ? 'Plagiarized' : 'Original'}
+                        </div>
+                    </div>
+                    <div class="chunk-content">${chunk.content}</div>
+                    <div class="chunk-meta">
+                        ${chunk.word_count} words
+                        ${chunk.is_plagiarized ? `• ${chunk.similarity_score.toFixed(1)}% similarity` : ''}
+                        ${chunk.source_title ? `• Source: <a href="${chunk.source_url}" target="_blank" class="source-link">${chunk.source_title}</a>` : ''}
+                    </div>
+                    ${chunk.is_plagiarized ? `
+                        <button class="generate-btn" onclick="generateRewrites(${chunk.chunk_id}, '${chunk.content.replace(/'/g, "\\'")}')">
+                            Fix This Content
+                        </button>
+                        <div class="rewrite-section" id="rewrite-${chunk.chunk_id}">
+                            <div class="rewrite-header">
+                                <div class="rewrite-title">Choose a Fixed Version:</div>
+                                <button class="close-rewrite" onclick="closeRewrite(${chunk.chunk_id})">×</button>
+                            </div>
+                            <div class="rewrite-suggestions" id="suggestions-${chunk.chunk_id}"></div>
+                        </div>
+                    ` : ''}
+                `;
+                
+                chunkList.appendChild(chunkDiv);
+            });
+            
+            results.classList.add('show');
+        }
+
+        // Generate rewrites for a specific chunk
+        async function generateRewrites(chunkId, chunkText) {
+            const rewriteSection = document.getElementById(`rewrite-${chunkId}`);
+            const suggestionsDiv = document.getElementById(`suggestions-${chunkId}`);
+            const generateBtn = event.target;
+            
+            // Show loading state
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = 'Fixing Content...';
+            
+            try {
+                const response = await fetch('http://localhost:8000/rewrite-chunk', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        chunk_text: chunkText,
+                        num_suggestions: 3
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                displayRewriteSuggestions(chunkId, data.suggestions, chunkText);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                suggestionsDiv.innerHTML = `
+                    <div class="error-message">
+                        Failed to fix content. Please try again.
+                    </div>
+                `;
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = 'Fix This Content';
+            }
+        }
+
+        // Display rewrite suggestions
+        function displayRewriteSuggestions(chunkId, suggestions, originalText) {
+            const suggestionsDiv = document.getElementById(`suggestions-${chunkId}`);
+            const rewriteSection = document.getElementById(`rewrite-${chunkId}`);
+            
+            suggestionsDiv.innerHTML = '';
+            
+            suggestions.forEach((suggestion, index) => {
+                const suggestionDiv = document.createElement('div');
+                suggestionDiv.className = 'suggestion-item';
+                suggestionDiv.innerHTML = `
+                    <div class="suggestion-text">${suggestion}</div>
+                    <div class="suggestion-actions">
+                        <button class="btn btn-success btn-small" onclick="applyRewrite(${chunkId}, '${suggestion.replace(/'/g, "\\'")}', '${originalText.replace(/'/g, "\\'")}')">
+                            Use This Fix
+                        </button>
+                    </div>
+                `;
+                suggestionsDiv.appendChild(suggestionDiv);
+            });
+            
+            rewriteSection.classList.add('show');
+        }
+
+        // Apply selected rewrite to the original text
+        function applyRewrite(chunkId, newText, originalText) {
+            const textarea = document.getElementById('plagiarismText');
+            const currentText = textarea.value;
+            
+            // Replace the original chunk text with the new text
+            const updatedText = currentText.replace(originalText, newText);
+            textarea.value = updatedText;
+            
+            // Close the rewrite section
+            closeRewrite(chunkId);
+            
+            // Show success message
+            showSuccessMessage(`Chunk ${chunkId + 1} has been fixed and updated!`);
+            
+            // Re-run plagiarism check to update results
+            setTimeout(() => {
+                document.getElementById('plagiarismForm').dispatchEvent(new Event('submit'));
+            }, 1000);
+        }
+
+        // Close rewrite section
+        function closeRewrite(chunkId) {
+            const rewriteSection = document.getElementById(`rewrite-${chunkId}`);
+            rewriteSection.classList.remove('show');
+        }
+
+        // Show success message
+        function showSuccessMessage(message) {
+            const results = document.getElementById('plagiarismResults');
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-message';
+            successDiv.innerHTML = `${message}`;
+            
+            results.insertBefore(successDiv, results.firstChild);
+            
+            // Remove message after 3 seconds
+            setTimeout(() => {
+                successDiv.remove();
+            }, 3000);
+        }
+
+        function showError(containerId, message) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `
+                <div class="error-message">
+                    ${message}
+                </div>
+            `;
+            container.classList.add('show');
+        }
+
+        // Add some sample text for testing
+        document.addEventListener('DOMContentLoaded', function() {
+            const sampleText = `Artificial intelligence is revolutionizing the way we approach complex problems across various industries. Machine learning algorithms can now process vast amounts of data with unprecedented accuracy and speed. Deep learning networks have enabled breakthroughs in computer vision, natural language processing, and speech recognition. These technologies are being integrated into healthcare systems to assist in medical diagnosis and treatment planning.`;
+            
+            document.getElementById('plagiarismText').placeholder = `Sample text for testing:\n\n${sampleText}`;
+        });
+    </script>
+</body>
+</html>

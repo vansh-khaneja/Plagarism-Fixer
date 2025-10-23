@@ -1,0 +1,13 @@
+# Google Custom Search API Credentials
+GOOGLE_API_KEY=your_api_key_here
+GOOGLE_SEARCH_ENGINE_ID=your_search_engine_id_here
+
+# OpenAI API Key for rewriting plagiarized content
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Plagiarism Checker Configuration
+CHUNK_SIZE=80
+OVERLAP_PERCENTAGE=0.15
+SIMILARITY_THRESHOLD=50
+MAX_CHUNKS=0
+DELAY_BETWEEN_REQUESTS=1.0
