@@ -473,7 +473,7 @@
             btn.disabled = true;
             
             try {
-                const response = await fetch('http://localhost:8000/check-plagiarism', {
+                const response = await fetch('http://5.223.43.159:8000/check-plagiarism', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -490,7 +490,7 @@
                 
             } catch (error) {
                 console.error('Error:', error);
-                showError('plagiarismResults', 'Failed to check plagiarism. Please make sure the API is running on localhost:8000');
+                showError('plagiarismResults', 'Failed to find plagiarism. Please make sure the API is running on http://5.223.43.159:8000');
             } finally {
                 loading.classList.remove('show');
                 btn.disabled = false;
@@ -579,7 +579,7 @@
             generateBtn.innerHTML = 'Fixing Content...';
             
             try {
-                const response = await fetch('http://localhost:8000/rewrite-chunk', {
+                const response = await fetch('http://5.223.43.159:8000/rewrite-chunk', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -601,7 +601,7 @@
                 console.error('Error:', error);
                 suggestionsDiv.innerHTML = `
                     <div class="error-message">
-                        Failed to fix content. Please try again.
+                        Failed to fix content. Please make sure the API is running on http://5.223.43.159:8000
                     </div>
                 `;
             } finally {

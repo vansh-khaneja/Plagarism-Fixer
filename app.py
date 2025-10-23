@@ -242,7 +242,7 @@ async def api_info():
     return {
         "message": "Plagiarism Finder & Remover API",
         "version": "1.0.0",
-        "frontend": "Available at http://localhost:8000/",
+        "frontend": "Available at http://5.223.43.159:8000/",
         "endpoints": {
             "GET /": "Frontend interface",
             "POST /check-plagiarism": "Check content for plagiarism",
