@@ -262,6 +262,11 @@
             color: #155724;
         }
 
+        .status-fixed {
+            background: #cce5ff;
+            color: #004085;
+        }
+
         .chunk-content {
             color: #555;
             margin-bottom: 10px;
@@ -534,6 +539,7 @@
             data.chunk_details.forEach(chunk => {
                 const chunkDiv = document.createElement('div');
                 chunkDiv.className = `chunk-item ${chunk.is_plagiarized ? 'plagiarized' : 'original'}`;
+                chunkDiv.setAttribute('data-chunk-id', chunk.chunk_id);
                 
                 chunkDiv.innerHTML = `
                     <div class="chunk-header">
@@ -649,10 +655,124 @@
             // Show success message
             showSuccessMessage(`Chunk ${chunkId + 1} has been fixed and updated!`);
             
-            // Re-run plagiarism check to update results
-            setTimeout(() => {
-                document.getElementById('plagiarismForm').dispatchEvent(new Event('submit'));
-            }, 1000);
+            // Update the chunk display to show "Re-analyze" button instead of scores
+            updateChunkAfterFix(chunkId, newText);
+        }
+
+        // Update chunk display after fixing
+        function updateChunkAfterFix(chunkId, newText) {
+            const chunkItem = document.querySelector(`[data-chunk-id="${chunkId}"]`);
+            if (chunkItem) {
+                // Update the chunk content
+                const contentDiv = chunkItem.querySelector('.chunk-content');
+                if (contentDiv) {
+                    contentDiv.textContent = newText;
+                }
+                
+                // Remove plagiarism status and scores
+                const statusDiv = chunkItem.querySelector('.chunk-status');
+                if (statusDiv) {
+                    statusDiv.textContent = 'Fixed';
+                    statusDiv.className = 'chunk-status status-fixed';
+                }
+                
+                // Remove similarity score from meta
+                const metaDiv = chunkItem.querySelector('.chunk-meta');
+                if (metaDiv) {
+                    metaDiv.innerHTML = metaDiv.innerHTML.replace(/• \d+\.\d+% similarity/, '');
+                }
+                
+                // Replace "Fix This Content" button with "Re-analyze" button
+                const generateBtn = chunkItem.querySelector('.generate-btn');
+                if (generateBtn) {
+                    generateBtn.textContent = 'Re-analyze';
+                    generateBtn.className = 'generate-btn reanalyze-btn';
+                    generateBtn.onclick = () => reanalyzeChunk(chunkId, newText);
+                }
+                
+                // Hide rewrite section
+                const rewriteSection = chunkItem.querySelector('.rewrite-section');
+                if (rewriteSection) {
+                    rewriteSection.classList.remove('show');
+                }
+            }
+        }
+
+        // Re-analyze a specific chunk
+        async function reanalyzeChunk(chunkId, chunkText) {
+            const chunkItem = document.querySelector(`[data-chunk-id="${chunkId}"]`);
+            const reanalyzeBtn = chunkItem.querySelector('.reanalyze-btn');
+            
+            // Show loading state
+            reanalyzeBtn.disabled = true;
+            reanalyzeBtn.textContent = 'Analyzing...';
+            
+            try {
+                const response = await fetch('http://5.223.43.159:8000/check-plagiarism', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ content: chunkText })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // Update chunk with new analysis results
+                updateChunkWithNewAnalysis(chunkId, data.chunk_details[0]);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showError('plagiarismResults', 'Failed to re-analyze chunk. Please try again.');
+            } finally {
+                reanalyzeBtn.disabled = false;
+                reanalyzeBtn.textContent = 'Re-analyze';
+            }
+        }
+
+        // Update chunk with new analysis results
+        function updateChunkWithNewAnalysis(chunkId, chunkData) {
+            const chunkItem = document.querySelector(`[data-chunk-id="${chunkId}"]`);
+            if (chunkItem) {
+                // Update status
+                const statusDiv = chunkItem.querySelector('.chunk-status');
+                if (statusDiv) {
+                    if (chunkData.is_plagiarized) {
+                        statusDiv.textContent = 'Plagiarized';
+                        statusDiv.className = 'chunk-status status-plagiarized';
+                    } else {
+                        statusDiv.textContent = 'Original';
+                        statusDiv.className = 'chunk-status status-original';
+                    }
+                }
+                
+                // Update meta with similarity score
+                const metaDiv = chunkItem.querySelector('.chunk-meta');
+                if (metaDiv && chunkData.is_plagiarized) {
+                    metaDiv.innerHTML = `${chunkData.word_count} words • ${chunkData.similarity_score.toFixed(1)}% similarity`;
+                    if (chunkData.source_title) {
+                        metaDiv.innerHTML += ` • Source: <a href="${chunkData.source_url}" target="_blank" class="source-link">${chunkData.source_title}</a>`;
+                    }
+                }
+                
+                // Update button
+                const reanalyzeBtn = chunkItem.querySelector('.reanalyze-btn');
+                if (reanalyzeBtn) {
+                    if (chunkData.is_plagiarized) {
+                        reanalyzeBtn.textContent = 'Fix This Content';
+                        reanalyzeBtn.className = 'generate-btn';
+                        reanalyzeBtn.onclick = () => generateRewrites(chunkId, chunkData.content);
+                    } else {
+                        reanalyzeBtn.textContent = 'Re-analyze';
+                        reanalyzeBtn.className = 'generate-btn reanalyze-btn';
+                        reanalyzeBtn.onclick = () => reanalyzeChunk(chunkId, chunkData.content);
+                    }
+                }
+            }
         }
 
         // Close rewrite section
